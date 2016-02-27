@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>滑る床</title>
+    <meta charset="utf-8">
+    <script src="/socket.io/socket.io.js"></script>
+	<script>
+	    var s = io.connect('http://localhost:3000'); //ローカル
+
+	    //サーバから受け取るイベント
+	    s.on("connect", function () {
+	        console.log("接続完了");
+	    });
+	        
+	    s.on("test", function(data){
+	        console.log("データ受信"); 
+	        console.log(data);
+	        if(data == "right"){
+                if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 1) || (state.stage.chara.y / 60 == 8)){
+                    state.stage.chara.x = Math.min(state.stage.chara.x + 60, CANVAS_WIDTH - 120);
+                    state.stage.chara.keyR = true;
+                }
+	        }
+	        if(data == "left"){
+                if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.y / 60 == 1) || (state.stage.chara.y / 60 == 8)){
+                    state.stage.chara.x = Math.max(60, state.stage.chara.x - 60);
+                    state.stage.chara.keyL = true;
+                }
+	        }
+            if(data == "up"){
+                if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 1)){
+                    state.stage.chara.y = Math.max(60, state.stage.chara.y - 60);
+                    state.stage.chara.keyU = true;
+                }
+            }
+            if(data == "down"){
+                if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 8)){
+                    state.stage.chara.y = Math.min(state.stage.chara.y + 60, CANVAS_HEIGHT - 120);
+                    state.stage.chara.keyD = true;
+                }
+            }
+	    });    
+	    s.on("disconnect", function(){
+	        console.log("接続解除");
+	    });   
+	</script>
+    <script>
+		window.addEventListener('load', init);
+
+		//- constant -----------------------------------------------------------------------------//
+		var CANVAS_WIDTH = 900, CANVAS_HEIGHT = 600;
+		//- global variables --------------------------------------------------------------------//
+		var ctx;
+		var state;
+		var timer;
+		//- init function ------------------------------------------------------------------------//
+		function init(){
+		    'use strict';
+		    
+		    // inisialize canvas
+		    var canvas = document.getElementById('canvas');
+		    canvas.width = CANVAS_WIDTH;
+		    canvas.height = CANVAS_HEIGHT;
+		    
+		    // inisialize ctx
+		    ctx = canvas.getContext('2d');
+		    
+		    // inisialize state
+		    state = new Title();
+		}
+	</script>
+    <script>
+		// draw rect ----------------------------------------------//
+		function drawRect(x1, y1, x2, y2, color){
+		    'use strict';
+		    switch(color){
+		        case "BLACK":
+		            ctx.fillStyle = "rgb(0, 0, 0)";
+		            break;
+		        case "WHITE":
+		            ctx.fillStyle = "rgb(255, 255, 255)";
+		            break;
+		        case "RED":
+		            ctx.fillStyle = "rgb(255, 0, 0)";
+		            break;
+		        case "GREEN":
+		            ctx.fillStyle = "rgb(0, 255, 0)";
+		            break;
+		        case "BLUE":
+		            ctx.fillStyle = "rgb(0, 0, 255)";
+		            break;
+		    }
+		    ctx.fillRect(x1, y1, x2, y2);
+		}
+
+		//- drawField function -------------------------------------------//
+		function drawField(x1, y1, x2, y2, color){
+		    'use strict';
+		    switch(color){
+		        case 0:
+		            ctx.fillStyle = "rgb(0, 0, 0)";
+		            break;
+		        case 1:
+		            ctx.fillStyle = "rgb(255, 255, 255)";
+		            break;
+		        case 2:
+		            ctx.fillStyle = "rgb(255, 0, 0)";
+		            break;
+		        case 3:
+		            ctx.fillStyle = "rgb(0, 255, 0)";
+		            break;
+		        case 4:
+		            ctx.fillStyle = "rgb(0, 0, 255)";
+		            break;
+		        case 5:
+		            ctx.fillStyle = "rgb(192, 192, 192)";
+		    }
+		    ctx.fillRect(x1, y1, x2, y2);
+		}
+
+	</script>
+    <script>
+		//- Title constructor --------------------------------------//
+		function Title(){
+		    'use strict';
+		    window.addEventListener('keydown', this.keyDown);
+		    clearInterval(timer);
+		    this.drawTitle();
+		}
+
+		//- keyDown method ----------------------------------------//
+		Title.prototype.keyDown = function(e){
+		    'use strict';
+		    //console.log(e.keyCode);
+		    switch(e.keyCode){
+		        case 72:
+		            state.drawDiscription();
+		            break;
+		        case 13:
+		            window.removeEventListener('keydown', state.keyDown);
+		            state = new Game();
+		            break;
+		        case 66:
+		            state.drawTitle();
+		            break;
+		    }
+		}
+
+		//- drawTitle method --------------------------------------//
+		Title.prototype.drawTitle = function(){
+		    'use strict';
+		    
+		    // draw shadow
+		    ctx.shadowBlur = 4;
+		    ctx.shadowColor = "gray";
+		    ctx.shadowOffsetX = 5;
+		    ctx.shadowOffsetY = 5;
+
+		    // draw background
+		    drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, "BLACK");
+		    drawRect(100, 150, 170, 50, "RED"); // push H bg
+		    drawRect(100, 350, 170, 50, "RED"); // push Enter bg
+		    
+		    // draw Text
+		    ctx.fillStyle = "rgb(0, 255, 0)";
+		    ctx.font = "64px 'Comic Sans MS'";
+		    ctx.fillText("滑る床", CANVAS_WIDTH / 2 - 100, 100);
+		    
+		    ctx.font = "32px 'Comic Sans MS'";
+		    ctx.fillText("push H", 135, 185);
+		    ctx.fillText("→　説明画面に移行します", 300, 190);
+		    
+		    ctx.fillText("push Enter", 105, 385);
+		    ctx.fillText("→　GAMEを開始します", 300, 390);
+		    
+
+		    
+		    
+		}
+
+		//- drawDiscription method --------------------------------//
+		Title.prototype.drawDiscription = function(){
+		    'use strict';
+		    
+		    // draw background 
+		    drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, "BLACK");
+		    drawRect(100, 150, 170, 50, "RED");
+		    
+		    // draw Text
+		    ctx.fillStyle = "rgb(0, 255, 0)";
+		    ctx.font = "64px 'Comic Sans MS'";
+		    ctx.fillText("ゲーム説明", CANVAS_WIDTH / 2 - 180, 100);
+		    
+		    ctx.font = "32px 'Comic Sans MS'";
+		    ctx.fillText("push B", 135, 185);
+		    ctx.fillText("→　タイトル画面に移行します", 300, 190);
+		}
+
+	</script>
+    <script>
+		//- Game constructor -------------------------------------//
+		function Game(){
+		    'use strict';
+		    
+		    // inisialize evet listener
+		    window.addEventListener('keydown', this.keyDown);
+		    
+		    // inisialize timer
+		    clearInterval(timer);
+		    timer = setInterval(this.loop, 50);
+		    
+		    // inisialize stage
+		    this.stage = new Stage01();
+		}
+
+		//- loop method ------------------------------------------------------------------------//
+		Game.prototype.loop = function(){
+		    'use strict';
+		    state.stage.draw();
+		    state.stage.update();
+		    state.stage.goalDecision();
+		}
+
+		//- keyDown method ---------------------------------------------------------------------//
+		Game.prototype.keyDown = function(e){
+		    'use strict';
+		    //console.log(e.keyCode);
+		    switch(e.keyCode){
+		        case 13:
+		            //window.removeEventListener('keydown', state.keyDown);
+		            //state = new Result();
+		            break;
+		        case 32:
+		            //state.stage = new Stage02();
+		            break;
+		        case 37:
+		            if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.y / 60 == 1) || (state.stage.chara.y / 60 == 8)){
+		                state.stage.chara.x = Math.max(60, state.stage.chara.x - 60);
+		                state.stage.chara.keyL = true;
+		            }
+		            break;
+		        case 39:
+		           if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 1) || (state.stage.chara.y / 60 == 8)){
+		                state.stage.chara.x = Math.min(state.stage.chara.x + 60, CANVAS_WIDTH - 120);
+		                state.stage.chara.keyR = true;
+		            }
+		            break;
+		        case 38:
+		           if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 1)){
+		                state.stage.chara.y = Math.max(60, state.stage.chara.y - 60);
+		                state.stage.chara.keyU = true;
+		            }
+		            break;
+		        case 40:
+		           if((state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60] != 4) || (state.stage.chara.x / 60 == 1) || (state.stage.chara.x / 60 == 13) || (state.stage.chara.y / 60 == 8)){
+		                state.stage.chara.y = Math.min(state.stage.chara.y + 60, CANVAS_HEIGHT - 120);
+		                state.stage.chara.keyD = true;
+		            }
+		            break;
+		    }
+		}
+
+	</script>
+    <script>
+		//- Result constructor -------------------------------------//
+		function Result(){
+		    'use strict';
+		    window.addEventListener('keydown', this.keyDown);
+		    clearInterval(timer);
+		    timer = setInterval(this.loop, 16);
+		}
+
+		Result.prototype.loop = function(){
+		    'use strict';
+		    state.draw();
+		}
+
+		Result.prototype.keyDown = function(e){
+		    'use strict';
+		    //console.log(e.keyCode);
+		    switch(e.keyCode){
+		        case 13:
+		            window.removeEventListener('keydown', state.keyDown);
+		            state = new Title();
+		            //location.reload();
+		            break;
+		    }
+		}
+
+		Result.prototype.draw = function(){
+		    'use strict';
+		    
+		    // draw background
+		    drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, "BLACK");
+		    drawRect(100, 150, 170, 50, "RED"); // push Enter bg
+		    
+		    // draw text
+		    ctx.fillStyle = "rgb(0, 255, 0)";
+		    ctx.font = "64px 'Comic Sans MS'";
+		    ctx.fillText("ゲームクリア", CANVAS_WIDTH / 2 - 160, 100);
+		    
+		    ctx.font = "32px 'Comic Sans MS'";
+		    ctx.fillText("push Enter", 105, 185);
+		    ctx.fillText("→　タイトル画面に移行します", 300, 190);
+		}
+	</script>
+    <script>
+		//- Chara constructor -----------------------------------------------------------//
+		function Chara(){
+		    'use strict';
+		    this.x = 13 * 60;
+		    this.y = 6 * 60;
+		    this.w = 60;
+		    this.h = 60;
+		    
+		    this.keyL = false;
+		    this.keyR = false;
+		    this.keyU = false;
+		    this.keyD = false;
+		}
+
+		Chara.prototype.draw = function(){
+		    'use strict';
+		    drawRect(this.x, this.y, this.w, this.h, "GREEN");
+		}
+
+
+	</script>
+    <script>
+		//- stage constructor ------------------------------------//
+		function Stage(){
+		    'use strict';
+		    this.chara = new Chara();
+		    
+		    this.draw = function(){
+		        'use strict';
+		        for(var i = 0; i < 10; i++){
+		            for(var j = 0; j < 15; j++){
+		                drawField(j * 60, i * 60, j * 60 + 60, i * 60 + 60, state.stage.field[i][j]);
+		                this.chara.draw();
+		            }
+		        }
+		    }
+		    
+		    this.update = function(){
+		        'use strict';
+		        switch(state.stage.field[state.stage.chara.y / 60][state.stage.chara.x / 60]){
+		            case 4:
+		                if(state.stage.chara.keyL == true){
+		                    state.stage.chara.x = Math.max(60, state.stage.chara.x - 60);
+		                    if(state.stage.chara.x / 60 == 1){
+		                        state.stage.chara.keyL = false;
+		                    }
+		                }else if(state.stage.chara.keyR == true){
+		                    state.stage.chara.x = Math.min(state.stage.chara.x + 60, CANVAS_WIDTH - 120);
+		                    if(state.stage.chara.x / 60 == 13){
+		                        state.stage.chara.keyR = false;
+		                    }
+		                }else if(state.stage.chara.keyU == true){
+		                    state.stage.chara.y = Math.max(60, state.stage.chara.y - 60);
+		                    if(state.stage.chara.y / 60 == 1){
+		                        state.stage.chara.keyU = false;
+		                    }
+		                }else if(state.stage.chara.keyD == true){
+		                    state.stage.chara.y = Math.min(state.stage.chara.y + 60, CANVAS_HEIGHT - 120);
+		                    if(state.stage.chara.y / 60 == 8){
+		                        state.stage.chara.keyD = false;
+		                    }
+		                }
+		                break;
+		            case 5:
+		                state.stage.chara.keyL = false;
+		                state.stage.chara.keyR = false;
+		                state.stage.chara.keyU = false;
+		                state.stage.chara.keyD = false;
+		                break;
+		        }
+		        
+		        //console.log(state.stage.chara.x / 60, state.stage.chara.y / 60);
+		        //console.log(state.stage.chara.keyL, state.stage.chara.keyR, state.stage.chara.keyU, state.stage.chara.keyD);
+		    }
+		}
+
+		//- stage01 constructor --------------------------------------------//
+		function Stage01(){
+		    'use strict';
+		    this.chara.x = 13 * 60;
+		    this.chara.y = 6 * 60;    
+
+		    this.field = [
+		        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 5, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 0],
+		        [0, 4, 5, 4, 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 4, 4, 0],
+		        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		    ];
+		    
+		    this.goalDecision = function(){
+		        'use strict';
+		        
+		        ctx.fillText("Stage1", CANVAS_WIDTH / 2 - 60, 45);
+		        
+		        if(((state.stage.chara.x / 60) == 6) && ((state.stage.chara.y / 60) == 3)){
+		            state.stage.chara.keyR = false;
+		        } 
+		        if(((state.stage.chara.x / 60) == 8) && ((state.stage.chara.y / 60) == 3)){
+		            state.stage.chara.keyL = false;
+		        } 
+		        if(((state.stage.chara.x / 60) == 7) && ((state.stage.chara.y / 60) == 3)){
+		            if(state.stage.chara.keyU == true){
+		                state.stage = new Stage02();                
+		            }
+		        } 
+		    }
+		}
+
+		Stage01.prototype = new Stage();
+
+
+		//- stage02 constructor --------------------------------------------//
+		function Stage02(){
+		    'use strict';
+		    
+		    this.chara.x = 360;
+		    this.chara.y = 240;
+		    
+		    this.field = [
+		        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 4, 0],
+		        [0, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 5, 4, 4, 4, 4, 5, 5, 4, 4, 4, 4, 4, 0],
+		        [0, 5, 4, 4, 4, 4, 5, 4, 4, 4, 5, 5, 5, 4, 0],
+		        [0, 4, 4, 4, 5, 4, 4, 4, 5, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 5, 4, 4, 4, 4, 5, 4, 4, 4, 5, 4, 4, 0],
+		        [0, 4, 4, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0],
+		        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		    ];
+		    
+		    this.goalDecision = function(){
+		        'use strict';
+		        
+		        ctx.fillText("Stage2", CANVAS_WIDTH / 2 - 60, 45);
+		        
+		        if(((state.stage.chara.x / 60) == 4) && ((state.stage.chara.y / 60) == 2)){
+		            window.removeEventListener('keydown', state.keyDown);
+		            state = new Result();
+		        }
+		    }
+		}
+
+		Stage02.prototype = new Stage();
+	</script>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+</html>
